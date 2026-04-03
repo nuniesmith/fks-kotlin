@@ -1,0 +1,171 @@
+-- StrategyConfig table for persisting strategy execution configurations
+CREATE TABLE IF NOT EXISTS StrategyConfigEntity (
+    config_id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+
+    -- Execution settings
+    mode TEXT NOT NULL,
+    position_sizing_method TEXT NOT NULL,
+
+    -- Risk and position sizing
+    risk_per_trade REAL NOT NULL,
+    fixed_position_size REAL NOT NULL,
+    account_percentage REAL NOT NULL,
+    kelly_fraction REAL NOT NULL,
+
+    -- Position limits
+    max_positions INTEGER NOT NULL,
+    max_positions_per_asset INTEGER NOT NULL,
+    min_signal_confidence REAL NOT NULL,
+
+    -- Stop-loss settings
+    stop_loss_method TEXT NOT NULL,
+    stop_loss_percentage REAL NOT NULL,
+    stop_loss_atr_multiplier REAL NOT NULL,
+
+    -- Take-profit settings
+    take_profit_method TEXT NOT NULL,
+    take_profit_percentage REAL NOT NULL,
+    take_profit_atr_multiplier REAL NOT NULL,
+    risk_reward_ratio REAL NOT NULL,
+
+    -- Order settings
+    default_order_type TEXT NOT NULL,
+    limit_order_offset REAL NOT NULL,
+    time_in_force TEXT NOT NULL,
+
+    -- Execution preferences
+    dry_run_mode INTEGER NOT NULL DEFAULT 0,
+    require_confirmation INTEGER NOT NULL DEFAULT 1,
+    close_positions_eod INTEGER NOT NULL DEFAULT 0,
+    max_slippage_percent REAL NOT NULL,
+
+    -- Asset filters (stored as JSON arrays)
+    asset_whitelist TEXT NOT NULL DEFAULT '[]',
+    asset_blacklist TEXT NOT NULL DEFAULT '[]',
+
+    -- Metadata
+    is_active INTEGER NOT NULL DEFAULT 1,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    is_synced INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+-- Index for faster queries by name
+CREATE INDEX IF NOT EXISTS idx_strategy_config_name ON StrategyConfigEntity(name);
+
+-- Index for active configs
+CREATE INDEX IF NOT EXISTS idx_strategy_config_active ON StrategyConfigEntity(is_active);
+
+-- Index for default config
+CREATE INDEX IF NOT EXISTS idx_strategy_config_default ON StrategyConfigEntity(is_default);
+
+-- Index for unsynced configs
+CREATE INDEX IF NOT EXISTS idx_strategy_config_synced ON StrategyConfigEntity(is_synced);
+
+-- Queries
+
+-- Insert or replace a strategy config
+insertOrReplace:
+INSERT OR REPLACE INTO StrategyConfigEntity (
+    config_id,
+    name,
+    description,
+    mode,
+    position_sizing_method,
+    risk_per_trade,
+    fixed_position_size,
+    account_percentage,
+    kelly_fraction,
+    max_positions,
+    max_positions_per_asset,
+    min_signal_confidence,
+    stop_loss_method,
+    stop_loss_percentage,
+    stop_loss_atr_multiplier,
+    take_profit_method,
+    take_profit_percentage,
+    take_profit_atr_multiplier,
+    risk_reward_ratio,
+    default_order_type,
+    limit_order_offset,
+    time_in_force,
+    dry_run_mode,
+    require_confirmation,
+    close_positions_eod,
+    max_slippage_percent,
+    asset_whitelist,
+    asset_blacklist,
+    is_active,
+    is_default,
+    is_synced,
+    created_at,
+    updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Get config by ID
+getById:
+SELECT * FROM StrategyConfigEntity WHERE config_id = ?;
+
+-- Get all configs
+getAll:
+SELECT * FROM StrategyConfigEntity ORDER BY name ASC;
+
+-- Get active configs
+getActive:
+SELECT * FROM StrategyConfigEntity WHERE is_active = 1 ORDER BY name ASC;
+
+-- Get default config
+getDefault:
+SELECT * FROM StrategyConfigEntity WHERE is_default = 1 LIMIT 1;
+
+-- Get config by name
+getByName:
+SELECT * FROM StrategyConfigEntity WHERE name = ? LIMIT 1;
+
+-- Get unsynced configs
+getUnsynced:
+SELECT * FROM StrategyConfigEntity WHERE is_synced = 0 ORDER BY updated_at ASC;
+
+-- Set as default (first clear all defaults, then set the new one)
+clearDefaultFlags:
+UPDATE StrategyConfigEntity SET is_default = 0, updated_at = ?;
+
+setAsDefault:
+UPDATE StrategyConfigEntity SET is_default = 1, updated_at = ? WHERE config_id = ?;
+
+-- Mark config as synced
+markAsSynced:
+UPDATE StrategyConfigEntity SET is_synced = 1, updated_at = ? WHERE config_id = ?;
+
+-- Update active status
+updateActiveStatus:
+UPDATE StrategyConfigEntity SET is_active = ?, updated_at = ? WHERE config_id = ?;
+
+-- Delete config by ID
+deleteById:
+DELETE FROM StrategyConfigEntity WHERE config_id = ?;
+
+-- Delete all configs
+deleteAll:
+DELETE FROM StrategyConfigEntity;
+
+-- Count all configs
+countAll:
+SELECT COUNT(*) FROM StrategyConfigEntity;
+
+-- Count active configs
+countActive:
+SELECT COUNT(*) FROM StrategyConfigEntity WHERE is_active = 1;
+
+-- Count unsynced configs
+countUnsynced:
+SELECT COUNT(*) FROM StrategyConfigEntity WHERE is_synced = 0;
+
+-- Search configs by name pattern
+searchByName:
+SELECT * FROM StrategyConfigEntity
+WHERE name LIKE '%' || ? || '%'
+ORDER BY name ASC;

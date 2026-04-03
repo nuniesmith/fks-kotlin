@@ -1,0 +1,169 @@
+-- Order table for persisting trading orders
+CREATE TABLE IF NOT EXISTS OrderEntity (
+    order_id TEXT NOT NULL PRIMARY KEY,
+    symbol TEXT NOT NULL,
+    side TEXT NOT NULL,
+    order_type TEXT NOT NULL,
+    quantity REAL NOT NULL,
+    price REAL,
+    stop_price REAL,
+    status TEXT NOT NULL,
+    time_in_force TEXT NOT NULL,
+    filled_quantity REAL NOT NULL DEFAULT 0.0,
+    average_fill_price REAL,
+    timestamp INTEGER NOT NULL,
+    submitted_at INTEGER,
+    updated_at INTEGER,
+    completed_at INTEGER,
+    signal_id TEXT,
+    strategy_id TEXT,
+    fees REAL NOT NULL DEFAULT 0.0,
+    commission REAL NOT NULL DEFAULT 0.0,
+    error_message TEXT,
+    is_synced INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    local_updated_at INTEGER NOT NULL
+);
+
+-- Index for faster queries by symbol
+CREATE INDEX IF NOT EXISTS idx_order_symbol ON OrderEntity(symbol);
+
+-- Index for faster queries by status
+CREATE INDEX IF NOT EXISTS idx_order_status ON OrderEntity(status);
+
+-- Index for faster queries by timestamp
+CREATE INDEX IF NOT EXISTS idx_order_timestamp ON OrderEntity(timestamp);
+
+-- Index for faster queries by signal ID
+CREATE INDEX IF NOT EXISTS idx_order_signal_id ON OrderEntity(signal_id);
+
+-- Index for unsynced orders
+CREATE INDEX IF NOT EXISTS idx_order_synced ON OrderEntity(is_synced);
+
+-- Queries
+
+-- Insert or replace an order
+insertOrReplace:
+INSERT OR REPLACE INTO OrderEntity (
+    order_id,
+    symbol,
+    side,
+    order_type,
+    quantity,
+    price,
+    stop_price,
+    status,
+    time_in_force,
+    filled_quantity,
+    average_fill_price,
+    timestamp,
+    submitted_at,
+    updated_at,
+    completed_at,
+    signal_id,
+    strategy_id,
+    fees,
+    commission,
+    error_message,
+    is_synced,
+    created_at,
+    local_updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Get order by ID
+getById:
+SELECT * FROM OrderEntity WHERE order_id = ?;
+
+-- Get all orders
+getAll:
+SELECT * FROM OrderEntity ORDER BY timestamp DESC;
+
+-- Get orders by symbol
+getBySymbol:
+SELECT * FROM OrderEntity WHERE symbol = ? ORDER BY timestamp DESC;
+
+-- Get orders by status
+getByStatus:
+SELECT * FROM OrderEntity WHERE status = ? ORDER BY timestamp DESC;
+
+-- Get active orders (PENDING, OPEN, PARTIALLY_FILLED)
+getActive:
+SELECT * FROM OrderEntity
+WHERE status IN ('PENDING', 'OPEN', 'PARTIALLY_FILLED')
+ORDER BY timestamp DESC;
+
+-- Get orders by signal ID
+getBySignalId:
+SELECT * FROM OrderEntity WHERE signal_id = ? ORDER BY timestamp DESC;
+
+-- Get recent orders (limit)
+getRecent:
+SELECT * FROM OrderEntity ORDER BY timestamp DESC LIMIT ?;
+
+-- Get unsynced orders
+getUnsynced:
+SELECT * FROM OrderEntity WHERE is_synced = 0 ORDER BY timestamp ASC;
+
+-- Mark order as synced
+markAsSynced:
+UPDATE OrderEntity SET is_synced = 1, local_updated_at = ? WHERE order_id = ?;
+
+-- Update order status
+updateStatus:
+UPDATE OrderEntity
+SET status = ?, updated_at = ?, local_updated_at = ?
+WHERE order_id = ?;
+
+-- Update order fill
+updateFill:
+UPDATE OrderEntity
+SET filled_quantity = ?,
+    average_fill_price = ?,
+    updated_at = ?,
+    local_updated_at = ?
+WHERE order_id = ?;
+
+-- Delete order by ID
+deleteById:
+DELETE FROM OrderEntity WHERE order_id = ?;
+
+-- Delete old orders (older than timestamp)
+deleteOlderThan:
+DELETE FROM OrderEntity WHERE timestamp < ?;
+
+-- Delete all orders
+deleteAll:
+DELETE FROM OrderEntity;
+
+-- Count all orders
+countAll:
+SELECT COUNT(*) FROM OrderEntity;
+
+-- Count unsynced orders
+countUnsynced:
+SELECT COUNT(*) FROM OrderEntity WHERE is_synced = 0;
+
+-- Count active orders
+countActive:
+SELECT COUNT(*) FROM OrderEntity
+WHERE status IN ('PENDING', 'OPEN', 'PARTIALLY_FILLED');
+
+-- Get orders in time range
+getInTimeRange:
+SELECT * FROM OrderEntity
+WHERE timestamp >= ? AND timestamp <= ?
+ORDER BY timestamp DESC;
+
+-- Search orders by symbol pattern
+searchBySymbol:
+SELECT * FROM OrderEntity
+WHERE symbol LIKE '%' || ? || '%'
+ORDER BY timestamp DESC;
+
+-- Get filled orders
+getFilled:
+SELECT * FROM OrderEntity WHERE status = 'FILLED' ORDER BY timestamp DESC;
+
+-- Get cancelled orders
+getCancelled:
+SELECT * FROM OrderEntity WHERE status = 'CANCELLED' ORDER BY timestamp DESC;

@@ -1,0 +1,195 @@
+-- Position table for persisting trading positions
+CREATE TABLE IF NOT EXISTS PositionEntity (
+    position_id TEXT NOT NULL PRIMARY KEY,
+    symbol TEXT NOT NULL,
+    side TEXT NOT NULL,
+    quantity REAL NOT NULL,
+    entry_price REAL NOT NULL,
+    current_price REAL NOT NULL,
+    stop_loss REAL,
+    take_profit REAL,
+    status TEXT NOT NULL,
+    opened_at INTEGER NOT NULL,
+    closed_at INTEGER,
+    updated_at INTEGER,
+    unrealized_pnl REAL NOT NULL DEFAULT 0.0,
+    realized_pnl REAL NOT NULL DEFAULT 0.0,
+    fees REAL NOT NULL DEFAULT 0.0,
+    commission REAL NOT NULL DEFAULT 0.0,
+    order_id TEXT,
+    signal_id TEXT,
+    strategy_id TEXT,
+    is_synced INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    local_updated_at INTEGER NOT NULL
+);
+
+-- Index for faster queries by symbol
+CREATE INDEX IF NOT EXISTS idx_position_symbol ON PositionEntity(symbol);
+
+-- Index for faster queries by status
+CREATE INDEX IF NOT EXISTS idx_position_status ON PositionEntity(status);
+
+-- Index for faster queries by opened_at
+CREATE INDEX IF NOT EXISTS idx_position_opened_at ON PositionEntity(opened_at);
+
+-- Index for faster queries by signal ID
+CREATE INDEX IF NOT EXISTS idx_position_signal_id ON PositionEntity(signal_id);
+
+-- Index for unsynced positions
+CREATE INDEX IF NOT EXISTS idx_position_synced ON PositionEntity(is_synced);
+
+-- Queries
+
+-- Insert or replace a position
+insertOrReplace:
+INSERT OR REPLACE INTO PositionEntity (
+    position_id,
+    symbol,
+    side,
+    quantity,
+    entry_price,
+    current_price,
+    stop_loss,
+    take_profit,
+    status,
+    opened_at,
+    closed_at,
+    updated_at,
+    unrealized_pnl,
+    realized_pnl,
+    fees,
+    commission,
+    order_id,
+    signal_id,
+    strategy_id,
+    is_synced,
+    created_at,
+    local_updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Get position by ID
+getById:
+SELECT * FROM PositionEntity WHERE position_id = ?;
+
+-- Get all positions
+getAll:
+SELECT * FROM PositionEntity ORDER BY opened_at DESC;
+
+-- Get positions by symbol
+getBySymbol:
+SELECT * FROM PositionEntity WHERE symbol = ? ORDER BY opened_at DESC;
+
+-- Get positions by status
+getByStatus:
+SELECT * FROM PositionEntity WHERE status = ? ORDER BY opened_at DESC;
+
+-- Get open positions
+getOpen:
+SELECT * FROM PositionEntity WHERE status = 'OPEN' ORDER BY opened_at DESC;
+
+-- Get closed positions
+getClosed:
+SELECT * FROM PositionEntity WHERE status = 'CLOSED' ORDER BY closed_at DESC;
+
+-- Get positions by signal ID
+getBySignalId:
+SELECT * FROM PositionEntity WHERE signal_id = ? ORDER BY opened_at DESC;
+
+-- Get recent positions (limit)
+getRecent:
+SELECT * FROM PositionEntity ORDER BY opened_at DESC LIMIT ?;
+
+-- Get unsynced positions
+getUnsynced:
+SELECT * FROM PositionEntity WHERE is_synced = 0 ORDER BY opened_at ASC;
+
+-- Mark position as synced
+markAsSynced:
+UPDATE PositionEntity SET is_synced = 1, local_updated_at = ? WHERE position_id = ?;
+
+-- Update position price and PnL
+updatePriceAndPnL:
+UPDATE PositionEntity
+SET current_price = ?,
+    unrealized_pnl = ?,
+    updated_at = ?,
+    local_updated_at = ?
+WHERE position_id = ?;
+
+-- Close position
+closePosition:
+UPDATE PositionEntity
+SET status = 'CLOSED',
+    closed_at = ?,
+    realized_pnl = ?,
+    updated_at = ?,
+    local_updated_at = ?
+WHERE position_id = ?;
+
+-- Update stop loss and take profit
+updateStopLossAndTakeProfit:
+UPDATE PositionEntity
+SET stop_loss = ?,
+    take_profit = ?,
+    updated_at = ?,
+    local_updated_at = ?
+WHERE position_id = ?;
+
+-- Delete position by ID
+deleteById:
+DELETE FROM PositionEntity WHERE position_id = ?;
+
+-- Delete old positions (older than timestamp)
+deleteOlderThan:
+DELETE FROM PositionEntity WHERE opened_at < ?;
+
+-- Delete all positions
+deleteAll:
+DELETE FROM PositionEntity;
+
+-- Count all positions
+countAll:
+SELECT COUNT(*) FROM PositionEntity;
+
+-- Count unsynced positions
+countUnsynced:
+SELECT COUNT(*) FROM PositionEntity WHERE is_synced = 0;
+
+-- Count open positions
+countOpen:
+SELECT COUNT(*) FROM PositionEntity WHERE status = 'OPEN';
+
+-- Get positions in time range
+getInTimeRange:
+SELECT * FROM PositionEntity
+WHERE opened_at >= ? AND opened_at <= ?
+ORDER BY opened_at DESC;
+
+-- Search positions by symbol pattern
+searchBySymbol:
+SELECT * FROM PositionEntity
+WHERE symbol LIKE '%' || ? || '%'
+ORDER BY opened_at DESC;
+
+-- Get total unrealized PnL
+getTotalUnrealizedPnL:
+SELECT SUM(unrealized_pnl) FROM PositionEntity WHERE status = 'OPEN';
+
+-- Get total realized PnL
+getTotalRealizedPnL:
+SELECT SUM(realized_pnl) FROM PositionEntity WHERE status = 'CLOSED';
+
+-- Get positions with profit
+getPositionsWithProfit:
+SELECT * FROM PositionEntity
+WHERE (status = 'OPEN' AND unrealized_pnl > 0)
+   OR (status = 'CLOSED' AND realized_pnl > 0)
+ORDER BY opened_at DESC;
+
+-- Get positions with loss
+getPositionsWithLoss:
+SELECT * FROM PositionEntity
+WHERE (status = 'OPEN' AND unrealized_pnl < 0)
+   OR (status = 'CLOSED' AND realized_pnl < 0)
+ORDER BY opened_at DESC;

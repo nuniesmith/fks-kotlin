@@ -1,0 +1,116 @@
+-- Signal table for persisting trading signals
+CREATE TABLE IF NOT EXISTS SignalEntity (
+    signal_id TEXT NOT NULL PRIMARY KEY,
+    signal_type TEXT NOT NULL,
+    symbol TEXT NOT NULL,
+    timeframe TEXT NOT NULL,
+    direction TEXT NOT NULL,
+    entry_price REAL NOT NULL,
+    stop_loss REAL NOT NULL,
+    take_profit REAL NOT NULL,
+    confidence REAL NOT NULL,
+    timestamp INTEGER NOT NULL,
+    strategy_name TEXT,
+    strategy_type TEXT,
+    risk_reward_ratio REAL,
+    expires_at INTEGER,
+    is_synced INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+-- Index for faster queries by symbol
+CREATE INDEX IF NOT EXISTS idx_signal_symbol ON SignalEntity(symbol);
+
+-- Index for faster queries by timestamp
+CREATE INDEX IF NOT EXISTS idx_signal_timestamp ON SignalEntity(timestamp);
+
+-- Index for faster queries by signal type
+CREATE INDEX IF NOT EXISTS idx_signal_type ON SignalEntity(signal_type);
+
+-- Index for unsynced signals
+CREATE INDEX IF NOT EXISTS idx_signal_synced ON SignalEntity(is_synced);
+
+-- Queries
+
+-- Insert or replace a signal
+insertOrReplace:
+INSERT OR REPLACE INTO SignalEntity (
+    signal_id,
+    signal_type,
+    symbol,
+    timeframe,
+    direction,
+    entry_price,
+    stop_loss,
+    take_profit,
+    confidence,
+    timestamp,
+    strategy_name,
+    strategy_type,
+    risk_reward_ratio,
+    expires_at,
+    is_synced,
+    created_at,
+    updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Get signal by ID
+getById:
+SELECT * FROM SignalEntity WHERE signal_id = ?;
+
+-- Get all signals
+getAll:
+SELECT * FROM SignalEntity ORDER BY timestamp DESC;
+
+-- Get signals by symbol
+getBySymbol:
+SELECT * FROM SignalEntity WHERE symbol = ? ORDER BY timestamp DESC;
+
+-- Get signals by type
+getByType:
+SELECT * FROM SignalEntity WHERE signal_type = ? ORDER BY timestamp DESC;
+
+-- Get recent signals (limit)
+getRecent:
+SELECT * FROM SignalEntity ORDER BY timestamp DESC LIMIT ?;
+
+-- Get unsynced signals
+getUnsynced:
+SELECT * FROM SignalEntity WHERE is_synced = 0 ORDER BY timestamp ASC;
+
+-- Mark signal as synced
+markAsSynced:
+UPDATE SignalEntity SET is_synced = 1, updated_at = ? WHERE signal_id = ?;
+
+-- Delete signal by ID
+deleteById:
+DELETE FROM SignalEntity WHERE signal_id = ?;
+
+-- Delete old signals (older than timestamp)
+deleteOlderThan:
+DELETE FROM SignalEntity WHERE timestamp < ?;
+
+-- Delete all signals
+deleteAll:
+DELETE FROM SignalEntity;
+
+-- Count all signals
+countAll:
+SELECT COUNT(*) FROM SignalEntity;
+
+-- Count unsynced signals
+countUnsynced:
+SELECT COUNT(*) FROM SignalEntity WHERE is_synced = 0;
+
+-- Get signals in time range
+getInTimeRange:
+SELECT * FROM SignalEntity
+WHERE timestamp >= ? AND timestamp <= ?
+ORDER BY timestamp DESC;
+
+-- Search signals by symbol pattern
+searchBySymbol:
+SELECT * FROM SignalEntity
+WHERE symbol LIKE '%' || ? || '%'
+ORDER BY timestamp DESC;

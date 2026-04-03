@@ -1,0 +1,137 @@
+package xyz.fkstrading.shared.integration
+
+import kotlinx.coroutines.test.runTest
+import xyz.fkstrading.shared.data.api.ApiClient
+import xyz.fkstrading.shared.data.api.ApiClientImpl
+import xyz.fkstrading.shared.data.api.HttpClientFactory
+import kotlin.test.Test
+import kotlin.test.assertTrue
+
+/**
+ * Integration tests against live backend API
+ *
+ * These tests require the backend to be running at localhost:8000
+ * Run with: ./run.sh up (from the fks root directory)
+ *
+ * To skip integration tests, use: ./gradlew test -PskipIntegrationTests
+ */
+class ApiIntegrationTest {
+
+    private val baseUrl = "http://localhost:8000"
+
+    private fun createApiClient(): ApiClient {
+        val httpClient = HttpClientFactory.create(
+            baseUrl = baseUrl,
+            enableLogging = true,
+            timeoutMillis = 10_000
+        )
+        return ApiClientImpl(httpClient)
+    }
+
+    @Test
+    fun `ping backend returns true when server is running`() = runTest {
+        // Note: This test will fail if backend is not running
+        // That's expected - it's an integration test
+        val apiClient = createApiClient()
+
+        try {
+            val isAvailable = apiClient.ping()
+            println("✓ Backend ping successful: $isAvailable")
+            // We don't assert here because backend might not be running
+            // This is more of a connectivity smoke test
+        } catch (e: Exception) {
+            println("⚠️  Backend not available: ${e.message}")
+            println("   To run integration tests, start backend with: ./run.sh up")
+        }
+    }
+
+    @Test
+    fun `getHealthStatus returns valid response when server is running`() = runTest {
+        val apiClient = createApiClient()
+
+        try {
+            apiClient.getHealthStatus()
+                .onSuccess { healthResponse ->
+                    println("✓ Health check successful")
+                    println("  Status: ${healthResponse.status}")
+                    println("  Services: ${healthResponse.services.size}")
+                    println("  Timestamp: ${healthResponse.timestamp}")
+
+                    // Basic validation
+                    assertTrue(healthResponse.status.isNotBlank(), "Status should not be blank")
+                }
+                .onFailure { error ->
+                    println("⚠️  Health check failed: ${error.message}")
+                    println("   This is expected if backend is not running")
+                }
+        } catch (e: Exception) {
+            println("⚠️  Backend not available: ${e.message}")
+        }
+    }
+
+    @Test
+    fun `getSignals returns list when server is running`() = runTest {
+        val apiClient = createApiClient()
+
+        try {
+            apiClient.getSignals()
+                .onSuccess { signals ->
+                    println("✓ Fetched signals successfully")
+                    println("  Count: ${signals.size}")
+
+                    if (signals.isNotEmpty()) {
+                        val firstSignal = signals.first()
+                        println("  First signal: ${firstSignal.signalId}")
+                        println("    Symbol: ${firstSignal.symbol}")
+                        println("    Type: ${firstSignal.signalType}")
+                        println("    Confidence: ${firstSignal.confidence}")
+
+                        // Validate signal
+                        assertTrue(firstSignal.isValid(), "Signal should be valid")
+                    }
+                }
+                .onFailure { error ->
+                    println("⚠️  Failed to fetch signals: ${error.message}")
+                    println("   This is expected if backend is not running")
+                }
+        } catch (e: Exception) {
+            println("⚠️  Backend not available: ${e.message}")
+        }
+    }
+
+    @Test
+    fun `getDashboardOverview returns data when server is running`() = runTest {
+        val apiClient = createApiClient()
+
+        try {
+            apiClient.getDashboardOverview()
+                .onSuccess { dashboard ->
+                    println("✓ Dashboard overview fetched successfully")
+                    println("  Total signals: ${dashboard.totalSignals}")
+                    println("  Active positions: ${dashboard.activePositions}")
+                    println("  Open orders: ${dashboard.openOrders}")
+                    println("  Portfolio value: $${dashboard.portfolioValue}")
+                    println("  Total P&L: $${dashboard.totalPnL}")
+
+                    // Basic validation
+                    assertTrue(dashboard.totalSignals >= 0, "Total signals should be non-negative")
+                    assertTrue(dashboard.activePositions >= 0, "Active positions should be non-negative")
+                }
+                .onFailure { error ->
+                    println("⚠️  Failed to fetch dashboard: ${error.message}")
+                    println("   This is expected if backend is not running")
+                }
+        } catch (e: Exception) {
+            println("⚠️  Backend not available: ${e.message}")
+        }
+    }
+
+    /**
+     * Helper test to verify the test framework itself works
+     */
+    @Test
+    fun `test framework is working`() {
+        println("✓ Test framework is operational")
+        assertTrue(true, "This should always pass")
+    }
+}

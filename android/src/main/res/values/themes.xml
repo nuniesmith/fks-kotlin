@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.FKSClients" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:colorPrimary">#F7931A</item>
+        <item name="android:colorPrimaryDark">#E07800</item>
+        <item name="android:colorAccent">#4CAF50</item>
+        <item name="android:statusBarColor">#121212</item>
+        <item name="android:navigationBarColor">#121212</item>
+    </style>
+</resources>

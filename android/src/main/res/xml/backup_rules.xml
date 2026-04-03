@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- 
+        Backup Rules for FKS Trading Android App
+        
+        SECURITY: We explicitly exclude sensitive data from backups to prevent
+        exposure of authentication tokens, financial data, and user credentials.
+        
+        By default, all data is excluded from backup. Add explicit includes
+        only for non-sensitive data if needed.
+    -->
+    
+    <!-- Exclude all user data and app-specific files by default -->
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="database" path="." />
+    <exclude domain="file" path="." />
+    <exclude domain="external" path="." />
+    
+    <!-- If you need to include specific non-sensitive data in the future, add includes here:
+    <include domain="sharedpref" path="non_sensitive_prefs.xml" />
+    -->
+</full-backup-content>

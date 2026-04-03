@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <!-- 
+        Data Extraction Rules for Android 12+ (API 31+)
+        
+        SECURITY: These rules control what data can be extracted by device
+        backup tools and prevent exposure of sensitive financial information.
+    -->
+    
+    <cloud-backup>
+        <!-- Exclude sensitive data from cloud backups -->
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="external" path="." />
+    </cloud-backup>
+    
+    <device-transfer>
+        <!-- Exclude sensitive data from device transfer -->
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="external" path="." />
+    </device-transfer>
+</data-extraction-rules>

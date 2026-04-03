@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 
+        Network Security Configuration for FKS Trading Android App
+        
+        SECURITY: By default, cleartext (HTTP) traffic is blocked for security.
+        Only localhost is allowed for local development/testing.
+        
+        Production apps should ONLY use HTTPS.
+    -->
+    
+    <!-- Base configuration: Block cleartext by default -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Trust system certificates -->
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- Development: Allow cleartext only for localhost (127.0.0.1, localhost) -->
+    <!-- This is safe because localhost traffic never leaves the device -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">10.0.2.2</domain> <!-- Android emulator host -->
+    </domain-config>
+    
+    <!-- Production: Force HTTPS for all external domains -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">api.fkstrading.xyz</domain>
+        <domain includeSubdomains="true">auth.fkstrading.xyz</domain>
+        <domain includeSubdomains="true">data.fkstrading.xyz</domain>
+        <domain includeSubdomains="true">portfolio.fkstrading.xyz</domain>
+    </domain-config>
+</network-security-config>

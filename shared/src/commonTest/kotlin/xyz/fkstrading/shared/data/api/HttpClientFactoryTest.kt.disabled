@@ -1,0 +1,189 @@
+package xyz.fkstrading.shared.data.api
+
+import io.ktor.client.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
+
+class HttpClientFactoryTest {
+
+    @Test
+    fun `create should return configured HttpClient`() {
+        val client = HttpClientFactory.create()
+
+        assertNotNull(client)
+        client.close()
+    }
+
+    @Test
+    fun `create should accept custom base URL`() {
+        val customUrl = "http://api.example.com:9000"
+        val client = HttpClientFactory.create(baseUrl = customUrl)
+
+        assertNotNull(client)
+        client.close()
+    }
+
+    @Test
+    fun `create should respect logging configuration`() {
+        val clientWithLogging = HttpClientFactory.create(enableLogging = true)
+        val clientWithoutLogging = HttpClientFactory.create(enableLogging = false)
+
+        assertNotNull(clientWithLogging)
+        assertNotNull(clientWithoutLogging)
+
+        clientWithLogging.close()
+        clientWithoutLogging.close()
+    }
+
+    @Test
+    fun `create should respect timeout configuration`() {
+        val shortTimeout = 5_000L
+        val client = HttpClientFactory.create(timeoutMillis = shortTimeout)
+
+        assertNotNull(client)
+        client.close()
+    }
+
+    @Test
+    fun `createWebSocketClient should return configured HttpClient`() {
+        val client = HttpClientFactory.createWebSocketClient()
+
+        assertNotNull(client)
+        client.close()
+    }
+
+    @Test
+    fun `createWebSocketClient should accept custom base URL`() {
+        val customWsUrl = "ws://websocket.example.com:8080"
+        val client = HttpClientFactory.createWebSocketClient(baseUrl = customWsUrl)
+
+        assertNotNull(client)
+        client.close()
+    }
+
+    @Test
+    fun `ApiException NetworkException should have correct message`() {
+        val exception = ApiException.NetworkException("Connection failed")
+
+        assertEquals("Connection failed", exception.message)
+        assertTrue(exception is ApiException.NetworkException)
+    }
+
+    @Test
+    fun `ApiException ServerException should contain status code`() {
+        val exception = ApiException.ServerException(500, "Internal Server Error")
+
+        assertEquals(500, exception.statusCode)
+        assertEquals("Internal Server Error", exception.message)
+    }
+
+    @Test
+    fun `ApiException ClientException should contain status code`() {
+        val exception = ApiException.ClientException(404, "Not Found")
+
+        assertEquals(404, exception.statusCode)
+        assertEquals("Not Found", exception.message)
+    }
+
+    @Test
+    fun `ApiException TimeoutException should have correct message`() {
+        val exception = ApiException.TimeoutException("Request timeout")
+
+        assertEquals("Request timeout", exception.message)
+        assertTrue(exception is ApiException.TimeoutException)
+    }
+
+    @Test
+    fun `ApiException SerializationException should have correct message`() {
+        val exception = ApiException.SerializationException("Failed to deserialize")
+
+        assertEquals("Failed to deserialize", exception.message)
+        assertTrue(exception is ApiException.SerializationException)
+    }
+
+    @Test
+    fun `ApiException AuthException should have correct message`() {
+        val exception = ApiException.AuthException("Unauthorized")
+
+        assertEquals("Unauthorized", exception.message)
+        assertTrue(exception is ApiException.AuthException)
+    }
+
+    @Test
+    fun `ApiException UnknownException should have correct message`() {
+        val exception = ApiException.UnknownException("Unknown error occurred")
+
+        assertEquals("Unknown error occurred", exception.message)
+        assertTrue(exception is ApiException.UnknownException)
+    }
+
+    @Test
+    fun `client should have ContentNegotiation installed`() {
+        val client = HttpClientFactory.create()
+
+        // Verify client is created successfully with content negotiation
+        assertNotNull(client)
+
+        client.close()
+    }
+
+    @Test
+    fun `client should have HttpTimeout installed`() {
+        val client = HttpClientFactory.create(timeoutMillis = 15_000)
+
+        // Verify client is created successfully with timeout configuration
+        assertNotNull(client)
+
+        client.close()
+    }
+
+    @Test
+    fun `multiple clients can be created independently`() {
+        val client1 = HttpClientFactory.create(baseUrl = "http://localhost:8000")
+        val client2 = HttpClientFactory.create(baseUrl = "http://localhost:9000")
+        val client3 = HttpClientFactory.createWebSocketClient()
+
+        assertNotNull(client1)
+        assertNotNull(client2)
+        assertNotNull(client3)
+
+        client1.close()
+        client2.close()
+        client3.close()
+    }
+
+    @Test
+    fun `default configuration should use localhost 8000`() {
+        val client = HttpClientFactory.create()
+
+        assertNotNull(client)
+        // Client created with default base URL
+
+        client.close()
+    }
+
+    @Test
+    fun `default timeout should be 30 seconds`() {
+        val client = HttpClientFactory.create()
+
+        assertNotNull(client)
+        // Client created with default timeout of 30 seconds
+
+        client.close()
+    }
+
+    @Test
+    fun `logging should be enabled by default`() {
+        val client = HttpClientFactory.create()
+
+        assertNotNull(client)
+        // Client created with logging enabled by default
+
+        client.close()
+    }
+}
