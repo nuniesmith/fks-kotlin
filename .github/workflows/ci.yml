@@ -1,0 +1,45 @@
+name: CI
+
+# Verifies the KMP app builds + tests on every push/PR. iOS targets need a
+# macOS runner (a future matrix job); this Linux job covers the shared module,
+# the Android debug app, the desktop (JVM) app, and the JVM/Android unit tests.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & test (Linux — JVM/Desktop/Android)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build apps (Android debug + Desktop) and run tests
+        run: >-
+          ./gradlew
+          :composeApp:assembleDebug
+          :desktop:assemble
+          test
+          --continue --stacktrace
