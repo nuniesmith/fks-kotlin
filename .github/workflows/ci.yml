@@ -1,8 +1,10 @@
 name: CI
 
-# Verifies the KMP app builds + tests on every push/PR. iOS targets need a
-# macOS runner (a future matrix job); this Linux job covers the shared module,
-# the Android debug app, the desktop (JVM) app, and the JVM/Android unit tests.
+# Verifies the KMP app builds + tests on every push/PR. Steps are split per
+# target so a failure pinpoints WHICH part broke (the combined invocation hid
+# it). iOS targets need a macOS runner — a future matrix job; this Linux job
+# covers config, the shared module, the desktop (JVM) app, the Android app, and
+# the JVM/Android unit tests.
 
 on:
   push:
@@ -36,10 +38,19 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build apps (Android debug + Desktop) and run tests
-        run: >-
-          ./gradlew
-          :composeApp:assembleDebug
-          :desktop:assemble
-          test
-          --continue --stacktrace
+      # Configures every module + resolves the build model. Catches plugin /
+      # version / SDK-location problems fast, before any compilation.
+      - name: Validate Gradle configuration
+        run: ./gradlew help projects --stacktrace
+
+      - name: Build shared module (JVM + Android)
+        run: ./gradlew :shared:jvmJar :shared:assembleRelease --stacktrace
+
+      - name: Build desktop (JVM) app
+        run: ./gradlew :desktop:assemble --stacktrace
+
+      - name: Build Android debug app
+        run: ./gradlew :composeApp:assembleDebug --stacktrace
+
+      - name: Run unit tests (JVM + Android)
+        run: ./gradlew :shared:jvmTest :shared:testDebugUnitTest :composeApp:testDebugUnitTest --continue --stacktrace
