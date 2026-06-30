@@ -8,11 +8,15 @@ package xyz.fkstrading.client.config
  */
 object AppConfig {
     /**
-     * Development environment (local backend)
+     * Development environment (local janus backend)
+     *
+     * HTTP points at the janus Brain API; [FORWARD_BASE_URL] is the janus Forward REST
+     * service (positions/account). Confirm the real ports before smoke-testing.
      */
     object Development {
         const val WS_BASE_URL = "ws://localhost:8000"
-        const val HTTP_BASE_URL = "http://localhost:8000"
+        const val HTTP_BASE_URL = "http://localhost:8080"
+        const val FORWARD_BASE_URL = "http://localhost:8081"
     }
 
     /**
@@ -21,6 +25,7 @@ object AppConfig {
     object Production {
         const val WS_BASE_URL = "wss://api.fkstrading.xyz"
         const val HTTP_BASE_URL = "https://api.fkstrading.xyz"
+        const val FORWARD_BASE_URL = "https://api.fkstrading.xyz"
     }
 
     /**
