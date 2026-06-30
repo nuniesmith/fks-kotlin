@@ -1,9 +1,9 @@
 package xyz.fkstrading.shared.domain.usecases
 
 import kotlinx.coroutines.flow.Flow
+import xyz.fkstrading.shared.data.api.DashboardOverviewResponse
 import xyz.fkstrading.shared.data.api.FksApiClient
-import xyz.fkstrading.shared.data.api.HealthResponse
-import xyz.fkstrading.shared.data.api.StatusResponse
+import xyz.fkstrading.shared.data.api.JanusHealthResponse
 import xyz.fkstrading.shared.data.repository.OrderRepository
 import xyz.fkstrading.shared.data.repository.PositionRepository
 import xyz.fkstrading.shared.data.repository.SignalRepository
@@ -242,23 +242,23 @@ class ClosePositionUseCase(
 // =============================================================================
 
 /**
- * Checks the health of the FKS backend API.
+ * Checks the health of the janus Brain API (`GET /health`).
  */
 class GetSystemHealthUseCase(
     private val apiClient: FksApiClient,
 ) {
-    suspend operator fun invoke(): Result<HealthResponse> {
+    suspend operator fun invoke(): Result<JanusHealthResponse> {
         return apiClient.getHealth()
     }
 }
 
 /**
- * Retrieves the current status of the FKS backend API.
+ * Retrieves the janus dashboard overview (`GET /api/dashboard/overview`).
  */
 class GetSystemStatusUseCase(
     private val apiClient: FksApiClient,
 ) {
-    suspend operator fun invoke(): Result<StatusResponse> {
+    suspend operator fun invoke(): Result<DashboardOverviewResponse> {
         return apiClient.getStatus()
     }
 }

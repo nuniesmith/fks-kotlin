@@ -18,7 +18,9 @@ val networkModule =
          * to use different base URLs for dev/staging/production.
          */
         single {
-            val baseUrl = getProperty("API_BASE_URL", "http://localhost:8000")
+            // Default to the janus brain API. NOTE: this HttpClientFactory client is not the
+            // lever for FksApiClient (which builds absolute URLs from its own ctor baseUrl).
+            val baseUrl = getProperty("API_BASE_URL", "http://localhost:8080")
             val enableLogging = getProperty("ENABLE_HTTP_LOGGING", "true").toBoolean()
 
             HttpClientFactory.create(

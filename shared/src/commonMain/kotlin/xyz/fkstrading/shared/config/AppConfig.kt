@@ -15,6 +15,9 @@ import kotlinx.serialization.Serializable
 data class AppConfig(
     val environment: Environment = Environment.DEVELOPMENT,
     val apiBaseUrl: String = getDefaultApiUrl(environment),
+    // janus Forward REST base (positions/account). Falls back to [apiBaseUrl] when a single
+    // proxy fronts both janus services; defaults to the brain URL otherwise.
+    val forwardBaseUrl: String = apiBaseUrl,
     val wsBaseUrl: String = getDefaultWsUrl(environment),
     val useMockData: Boolean = false,
     val enableLogging: Boolean = true,
@@ -31,7 +34,10 @@ data class AppConfig(
         fun development(useMockData: Boolean = false): AppConfig {
             return AppConfig(
                 environment = Environment.DEVELOPMENT,
-                apiBaseUrl = "http://localhost:8000",
+                // janus Brain API (JANUS_HTTP_PORT). Confirm the real local port before smoke-testing.
+                apiBaseUrl = "http://localhost:8080",
+                // janus Forward REST (risk/portfolio, account). NOT the data :8080 service.
+                forwardBaseUrl = "http://localhost:8081",
                 wsBaseUrl = "ws://localhost:8000",
                 useMockData = useMockData,
                 enableLogging = true,
@@ -85,7 +91,7 @@ data class AppConfig(
 
         private fun getDefaultApiUrl(env: Environment): String {
             return when (env) {
-                Environment.DEVELOPMENT -> "http://localhost:8000"
+                Environment.DEVELOPMENT -> "http://localhost:8080" // janus brain
                 Environment.STAGING -> "https://staging-api.fkstrading.xyz"
                 Environment.PRODUCTION -> "https://api.fkstrading.xyz"
             }
