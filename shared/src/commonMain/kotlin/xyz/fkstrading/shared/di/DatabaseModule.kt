@@ -24,8 +24,9 @@ val databaseModule =
 
         // Application Configuration
         single {
-            // Default to development with mock data for testing
-            // Override this in platform-specific modules for production
+            // Development config now points at janus (brain :8080 / forward :8081).
+            // useMockData stays TRUE until the live janus read path is smoke-tested — flip to
+            // false to activate the real OrderApiDataSource/PositionApiDataSource against janus.
             AppConfig.development(useMockData = true)
         }
 
@@ -34,11 +35,12 @@ val databaseModule =
             DatabaseWrapper(get())
         }
 
-        // API Client
+        // API Client (janus: brain = apiBaseUrl, forward REST = forwardBaseUrl)
         single {
             val config: AppConfig = get()
             FksApiClient(
                 baseUrl = config.apiBaseUrl,
+                forwardBaseUrl = config.forwardBaseUrl,
                 httpClient = FksApiClient.createDefaultHttpClient(),
                 authToken = config.authToken,
             )
