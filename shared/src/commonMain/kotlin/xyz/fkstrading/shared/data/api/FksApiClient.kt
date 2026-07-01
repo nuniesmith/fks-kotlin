@@ -12,7 +12,7 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonElement
 import xyz.fkstrading.shared.domain.models.*
 
 /**
@@ -105,7 +105,7 @@ class FksApiClient(
      * Maps to janus Brain `GET /api/signals/latest`, which returns
      * `{ signals: [<raw Redis JSON>], count }`. The elements are **unschematized**
      * (raw Redis values), so they cannot be deserialized as the typed [Signal]; callers
-     * get [JsonObject]s and must extract fields defensively. Capture a real body via the
+     * get [JsonElement]s and must extract fields defensively. Capture a real body via the
      * smoke-test before mapping these into typed UI models.
      */
     suspend fun getRecentSignalsRaw(): Result<SignalsLatestResponse> {
@@ -418,12 +418,12 @@ class FksApiClient(
 /**
  * janus Brain `GET /api/signals/latest`.
  *
- * `signals` are raw, unschematized Redis JSON values — kept as [JsonObject], NOT typed
+ * `signals` are raw, unschematized Redis JSON values — kept as [JsonElement], NOT typed
  * [Signal]s. Extract fields defensively after confirming the real shape via smoke-test.
  */
 @kotlinx.serialization.Serializable
 data class SignalsLatestResponse(
-    val signals: List<JsonObject> = emptyList(),
+    val signals: List<JsonElement> = emptyList(),
     val count: Int = 0,
 )
 
@@ -514,7 +514,7 @@ data class JanusPerformance(
 
 /**
  * janus Brain `GET /api/dashboard/overview`. `recent_signals` are raw, unschematized Redis
- * JSON (kept as [JsonObject]); `total_persisted` etc. may be placeholder values until wired.
+ * JSON (kept as [JsonElement]); `total_persisted` etc. may be placeholder values until wired.
  */
 @kotlinx.serialization.Serializable
 data class DashboardOverviewResponse(
@@ -523,7 +523,7 @@ data class DashboardOverviewResponse(
     @SerialName("uptime_seconds") val uptimeSeconds: Long = 0,
     @SerialName("active_modules") val activeModules: Int = 0,
     @SerialName("healthy_modules") val healthyModules: Int = 0,
-    @SerialName("recent_signals") val recentSignals: List<JsonObject> = emptyList(),
+    @SerialName("recent_signals") val recentSignals: List<JsonElement> = emptyList(),
     val performance: JanusPerformance = JanusPerformance(),
     @SerialName("module_status") val moduleStatus: List<JanusModuleHealth> = emptyList(),
 )
