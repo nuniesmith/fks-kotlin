@@ -1,0 +1,48 @@
+# ---- Gradle ----
+.gradle/
+build/
+**/build/
+# Keep the committed wrapper jar (it lives under gradle/wrapper, not .gradle/ or build/)
+!gradle/wrapper/gradle-wrapper.jar
+
+# ---- Kotlin / KMP ----
+.kotlin/
+*.hprof
+kotlin-js-store/
+
+# ---- Local / machine-specific ----
+local.properties
+*.local
+
+# ---- Android ----
+*.apk
+*.aab
+*.ap_
+*.dex
+captures/
+.cxx/
+
+# ---- Compose Desktop / packaging output ----
+**/compose-desktop/
+*.dmg
+*.msi
+*.deb
+*.pkg
+
+# ---- iOS / Xcode ----
+**/xcuserdata/
+**/*.xcworkspace/xcuserdata/
+*.xcuserstate
+iosApp/Pods/
+**/DerivedData/
+
+# ---- IDEs ----
+.idea/
+*.iml
+*.iws
+.vscode/
+.fleet/
+
+# ---- OS noise ----
+.DS_Store
+Thumbs.db
