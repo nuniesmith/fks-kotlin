@@ -2,7 +2,9 @@ package xyz.fkstrading.shared.data.api
 
 import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import xyz.fkstrading.shared.domain.models.OrderSide
 import xyz.fkstrading.shared.domain.models.PositionStatus
 import kotlin.test.Test
@@ -100,5 +102,35 @@ class JanusWireDeserTest {
         assertEquals(10500.12, pos.value)
 
         assertEquals(OrderSide.SELL, dto.copy(side = "Short").toPosition("X").side) // "Short" -> SELL
+    }
+
+    @Test
+    fun signalsLatest_real_live_signal_body_populates() {
+        // Captured 2026-07-03 from a RUNNING janus (live data mode) — the
+        // SignalBus→Redis persistence (janus #122) now populates
+        // /api/signals/latest with real forward-consensus signals, so the
+        // populated shape no longer needs to be synthetic. Covers the full
+        // production field set: nested string-map metadata, explicit nulls
+        // (stop_loss/take_profit/quantity/target_price), nanosecond RFC3339
+        // timestamp, and a composite strategy_id.
+        val body =
+            """{"count":1,"signals":[{"confidence":0.8285387654730265,"id":"24adb42a-1c1f-4aa0-8ec3-e98fc717c734","metadata":{"close_price":"1731.31000000","data_source":"live","ema_fast":"1731.1969","ema_slow":"1736.5417","exchange":"binance","fear":"LowVolMeanReverting","gate":"block_vol_filter:volatility too low (9% < 15%)","interval":"1m","prop_firm":"ok","regime":"Mean-Reverting","risk_check":"ok","rsi":"47.24","strategies_count":"2","total_votes":"2"},"priority":"Normal","quantity":null,"signal_type":"buy","source":"forward","stop_loss":null,"strategy_id":"macd_momentum+bollinger_breakout","symbol":"ETH/USDT","take_profit":null,"target_price":null,"timestamp":"2026-07-03T16:05:00.124615062Z"}]}"""
+        val r = json.decodeFromString<SignalsLatestResponse>(body)
+        assertEquals(1, r.count)
+        val s = r.signals[0].jsonObject
+        assertEquals("ETH/USDT", s.getValue("symbol").jsonPrimitive.content)
+        assertEquals("buy", s.getValue("signal_type").jsonPrimitive.content)
+        assertEquals("forward", s.getValue("source").jsonPrimitive.content)
+        assertEquals(
+            "macd_momentum+bollinger_breakout",
+            s.getValue("strategy_id").jsonPrimitive.content,
+        )
+        // Nested metadata map survives with the gate/regime context intact.
+        val meta = s.getValue("metadata").jsonObject
+        assertEquals("Mean-Reverting", meta.getValue("regime").jsonPrimitive.content)
+        assertTrue(meta.getValue("gate").jsonPrimitive.content.startsWith("block_vol_filter"))
+        // Explicit nulls stay JsonNull rather than being dropped or throwing.
+        assertEquals(JsonNull, s.getValue("stop_loss"))
+        assertEquals(JsonNull, s.getValue("take_profit"))
     }
 }
