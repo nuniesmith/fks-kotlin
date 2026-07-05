@@ -23,7 +23,12 @@ Auth gate and core domain logic are complete. UI screens exist. Remaining work i
 - [ ] Test on each platform target (Android, Desktop, iOS)
 
 ### KT-D: Core functionality
-- [ ] Connect to FastAPI backend over Tailscale HTTPS — confirm `HttpClientFactory` works with self-signed cert + Tailscale FQDN
+- [~] Connect to the **janus** backend over Tailscale HTTPS (the READ surface
+      was repointed off the old fks_ruby/FastAPI service — `FksApiClient.kt`).
+      The janus read DTOs (health, dashboard-overview, signals-latest, risk
+      portfolio) are verified against the live wire (`JanusWireDeserTest`, incl.
+      a real captured signal fixture). Remaining: confirm `HttpClientFactory`
+      works end-to-end with the self-signed cert + Tailscale FQDN against janus.
 - [ ] Implement SSE client in KMP (Ktor `HttpStatement` streaming) — wire to `/sse/strip`, `/sse/dashboard`
 - [ ] Core views: dashboard (scores/signals), positions, signals, charts (embed or native LW), alerts
 - [ ] Push notifications for trade signals (Android: FCM stub; iOS: APNs stub; Desktop: system tray)

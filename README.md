@@ -91,7 +91,7 @@ SQLDelight for offline-first local storage. Tables: `Signal`, `Position`, `Order
 
 ## Deployment
 
-The KMP app connects to the FKS backend over Tailscale HTTPS. No server-side deployment needed for the apps themselves.
+The KMP app connects to the FKS backend over Tailscale HTTPS. No server-side deployment needed for the apps themselves. The read surface (health, dashboard, signals, risk portfolio) targets **janus** — the old fks_ruby/FastAPI read path was retired; `FksApiClient.kt` holds the janus read DTOs, verified against the live wire in `JanusWireDeserTest`.
 
 ## Status
 
