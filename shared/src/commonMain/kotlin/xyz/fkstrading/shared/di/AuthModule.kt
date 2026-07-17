@@ -26,10 +26,13 @@ import xyz.fkstrading.shared.auth.TailscaleAuthRepositoryImpl
 val authModule = module {
 
     single<TailscaleAuthRepository> {
+        // Falls back to janus_api on the tailnet. NOTE: the `/api/tailscale/*` routes
+        // this repository calls are not currently served by janus (legacy/unwired) —
+        // tailnet membership itself is the trust boundary for now.
         val baseUrl: String = try {
-            getProperty("API_BASE_URL") ?: "http://localhost:8000"
+            getProperty("API_BASE_URL") ?: "https://oryx.tailfef10.ts.net:8443"
         } catch (e: Exception) {
-            "http://localhost:8000"
+            "https://oryx.tailfef10.ts.net:8443"
         }
 
         TailscaleAuthRepositoryImpl(

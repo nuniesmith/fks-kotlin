@@ -199,8 +199,8 @@ class SignalViewModel : ViewModel() {
 
 Set these via Koin properties or build configuration:
 
-- `API_BASE_URL` - Backend API base URL (default: `http://localhost:8000`)
-- `WS_BASE_URL` - WebSocket base URL (default: `ws://localhost:8000`)
+- `API_BASE_URL` - Backend API base URL (default: `https://oryx.tailfef10.ts.net:8443` — janus_api over Tailscale)
+- `WS_BASE_URL` - WebSocket base URL (default: `wss://oryx.tailfef10.ts.net:8443`)
 - `ENABLE_HTTP_LOGGING` - Enable HTTP logging (default: `true`)
 
 ### Example: Android
@@ -209,7 +209,7 @@ Set these via Koin properties or build configuration:
 // In build.gradle.kts
 android {
     defaultConfig {
-        buildConfigField("String", "API_BASE_URL", "\"https://api.fkstrading.xyz\"")
+        buildConfigField("String", "API_BASE_URL", "\"https://oryx.tailfef10.ts.net:8443\"")
     }
 }
 

@@ -29,16 +29,25 @@ data class AppConfig(
 ) {
     companion object {
         /**
-         * Development configuration with localhost endpoints
+         * Default configuration: the real janus backend on the Tailscale tailnet.
+         *
+         * Tailnet-internal defaults — the backend host (oryx) is only reachable from
+         * devices on the single-user tailnet, so trust is device-level; HTTPS is
+         * terminated by `tailscale serve` on the host, and proper user/auth management
+         * is deliberately deferred. Overridable at runtime in Settings
+         * (SystemSettingsViewModel: `api_base_url` / `ws_url`).
+         *
+         * Port map on oryx: `:8443` -> host 7000 -> janus_api (REST + `/ws/signals` on
+         * the same router); `:443` -> host 7001 -> janus forward REST (signals/risk).
          */
         fun development(useMockData: Boolean = false): AppConfig {
             return AppConfig(
                 environment = Environment.DEVELOPMENT,
-                // janus Brain API (JANUS_HTTP_PORT). Confirm the real local port before smoke-testing.
-                apiBaseUrl = "http://localhost:8080",
-                // janus Forward REST (risk/portfolio, account). NOT the data :8080 service.
-                forwardBaseUrl = "http://localhost:8081",
-                wsBaseUrl = "ws://localhost:8000",
+                // janus_api / brain REST (host 7000 behind tailscale serve :8443)
+                apiBaseUrl = "https://oryx.tailfef10.ts.net:8443",
+                // janus Forward REST (risk/portfolio, account) — host 7001 behind :443.
+                forwardBaseUrl = "https://oryx.tailfef10.ts.net",
+                wsBaseUrl = "wss://oryx.tailfef10.ts.net:8443",
                 useMockData = useMockData,
                 enableLogging = true,
                 enableAnalytics = false,
@@ -46,13 +55,15 @@ data class AppConfig(
         }
 
         /**
-         * Production configuration for fkstrading.xyz
+         * Production configuration — same single-host oryx deployment as [development]
+         * (the old api.fkstrading.xyz host is dead; there is no separate prod stack).
          */
         fun production(authToken: String? = null): AppConfig {
             return AppConfig(
                 environment = Environment.PRODUCTION,
-                apiBaseUrl = "https://api.fkstrading.xyz",
-                wsBaseUrl = "wss://api.fkstrading.xyz",
+                apiBaseUrl = "https://oryx.tailfef10.ts.net:8443",
+                forwardBaseUrl = "https://oryx.tailfef10.ts.net",
+                wsBaseUrl = "wss://oryx.tailfef10.ts.net:8443",
                 useMockData = false,
                 enableLogging = false,
                 enableAnalytics = true,
@@ -61,13 +72,15 @@ data class AppConfig(
         }
 
         /**
-         * Staging configuration
+         * Staging configuration — no separate staging deployment exists (the old
+         * staging-api.fkstrading.xyz host is dead); points at the same oryx host.
          */
         fun staging(authToken: String? = null): AppConfig {
             return AppConfig(
                 environment = Environment.STAGING,
-                apiBaseUrl = "https://staging-api.fkstrading.xyz",
-                wsBaseUrl = "wss://staging-api.fkstrading.xyz",
+                apiBaseUrl = "https://oryx.tailfef10.ts.net:8443",
+                forwardBaseUrl = "https://oryx.tailfef10.ts.net",
+                wsBaseUrl = "wss://oryx.tailfef10.ts.net:8443",
                 useMockData = false,
                 enableLogging = true,
                 enableAnalytics = false,
@@ -89,19 +102,21 @@ data class AppConfig(
             )
         }
 
+        // Single-host deployment: every environment resolves to the oryx tailnet host
+        // (janus_api behind tailscale serve :8443); the old *.fkstrading.xyz hosts are dead.
         private fun getDefaultApiUrl(env: Environment): String {
             return when (env) {
-                Environment.DEVELOPMENT -> "http://localhost:8080" // janus brain
-                Environment.STAGING -> "https://staging-api.fkstrading.xyz"
-                Environment.PRODUCTION -> "https://api.fkstrading.xyz"
+                Environment.DEVELOPMENT -> "https://oryx.tailfef10.ts.net:8443" // janus brain
+                Environment.STAGING -> "https://oryx.tailfef10.ts.net:8443"
+                Environment.PRODUCTION -> "https://oryx.tailfef10.ts.net:8443"
             }
         }
 
         private fun getDefaultWsUrl(env: Environment): String {
             return when (env) {
-                Environment.DEVELOPMENT -> "ws://localhost:8000"
-                Environment.STAGING -> "wss://staging-api.fkstrading.xyz"
-                Environment.PRODUCTION -> "wss://api.fkstrading.xyz"
+                Environment.DEVELOPMENT -> "wss://oryx.tailfef10.ts.net:8443"
+                Environment.STAGING -> "wss://oryx.tailfef10.ts.net:8443"
+                Environment.PRODUCTION -> "wss://oryx.tailfef10.ts.net:8443"
             }
         }
     }

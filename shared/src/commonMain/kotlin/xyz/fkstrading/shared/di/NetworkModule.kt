@@ -18,9 +18,10 @@ val networkModule =
          * to use different base URLs for dev/staging/production.
          */
         single {
-            // Default to the janus brain API. NOTE: this HttpClientFactory client is not the
+            // Default to the janus brain API on the tailnet (janus_api behind tailscale
+            // serve :8443 on oryx). NOTE: this HttpClientFactory client is not the
             // lever for FksApiClient (which builds absolute URLs from its own ctor baseUrl).
-            val baseUrl = getProperty("API_BASE_URL", "http://localhost:8080")
+            val baseUrl = getProperty("API_BASE_URL", "https://oryx.tailfef10.ts.net:8443")
             val enableLogging = getProperty("ENABLE_HTTP_LOGGING", "true").toBoolean()
 
             HttpClientFactory.create(
@@ -35,7 +36,8 @@ val networkModule =
          * Used for real-time data streams (Week 2 implementation)
          */
         single(qualifier = org.koin.core.qualifier.named("websocket")) {
-            val wsBaseUrl = getProperty("WS_BASE_URL", "ws://localhost:8000")
+            // janus_api serves /ws/signals + /ws/stream on the same port as its REST API.
+            val wsBaseUrl = getProperty("WS_BASE_URL", "wss://oryx.tailfef10.ts.net:8443")
             HttpClientFactory.createWebSocketClient(baseUrl = wsBaseUrl)
         }
 
