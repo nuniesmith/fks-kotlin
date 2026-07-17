@@ -8,24 +8,37 @@ package xyz.fkstrading.client.config
  */
 object AppConfig {
     /**
-     * Development environment (local janus backend)
+     * Default endpoints: the real janus backend over Tailscale.
      *
-     * HTTP points at the janus Brain API; [FORWARD_BASE_URL] is the janus Forward REST
-     * service (positions/account). Confirm the real ports before smoke-testing.
+     * These are tailnet-internal defaults — the backend host (oryx) is only reachable
+     * from devices on the single-user tailnet, so trust is device-level; HTTPS is
+     * terminated by `tailscale serve` on the host, and proper user/auth management is
+     * deliberately deferred. Overridable at runtime in Settings
+     * (SystemSettingsViewModel: `api_base_url` / `ws_url`).
+     *
+     * Port map on oryx:
+     *  - `:443`  -> host 7001 -> janus forward REST (`/api/v1/signals/generate` + the
+     *    `/api/v1/risk` routes)
+     *  - `:8443` -> host 7000 -> janus_api (REST + WebSocket `/ws/signals`, `/ws/stream`
+     *    on the same router — janus services/data/src/api/mod.rs)
      */
     object Development {
-        const val WS_BASE_URL = "ws://localhost:8000"
-        const val HTTP_BASE_URL = "http://localhost:8080"
-        const val FORWARD_BASE_URL = "http://localhost:8081"
+        // janus_api serves its WebSocket routes on the same port as its REST API.
+        const val WS_BASE_URL = "wss://oryx.tailfef10.ts.net:8443"
+        // janus_api (brain REST)
+        const val HTTP_BASE_URL = "https://oryx.tailfef10.ts.net:8443"
+        // janus forward REST (signals/risk, positions/account)
+        const val FORWARD_BASE_URL = "https://oryx.tailfef10.ts.net"
     }
 
     /**
-     * Production environment
+     * Production environment — same single-host oryx deployment as [Development]
+     * (the old api.fkstrading.xyz host is dead; there is no separate prod stack).
      */
     object Production {
-        const val WS_BASE_URL = "wss://api.fkstrading.xyz"
-        const val HTTP_BASE_URL = "https://api.fkstrading.xyz"
-        const val FORWARD_BASE_URL = "https://api.fkstrading.xyz"
+        const val WS_BASE_URL = "wss://oryx.tailfef10.ts.net:8443"
+        const val HTTP_BASE_URL = "https://oryx.tailfef10.ts.net:8443"
+        const val FORWARD_BASE_URL = "https://oryx.tailfef10.ts.net"
     }
 
     /**
@@ -35,6 +48,10 @@ object AppConfig {
 
     /**
      * WebSocket channel URLs
+     *
+     * janus_api only exposes `/ws/signals` and `/ws/stream` server-side; the
+     * orders/positions/market channels below are legacy and unwired — kept for
+     * source compatibility, do not expect them to connect.
      */
     object WebSocket {
         val SIGNALS_URL = "${currentEnv.WS_BASE_URL}/ws/signals"
